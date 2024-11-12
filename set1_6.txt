@@ -1,0 +1,60 @@
+6. The following tables form part of a database held in a relational DBMS: 
+Hotel (HotelNo, Name, City) 
+Room (RoomNo, HotelNo, Type, Price) 
+Booking (HotelNo, GuestNo, DateFrom, DateTo, RoomNo) 
+Guest (GuestNo, GuestName, GuestAddress) 
+Solve following queries by SQL 
+1. List full details of all hotels. 
+2. List full details of all hotels in London. 
+3. List all guests currently staying at the Grosvenor Hotel. 
+4. List the names and addresses of all guests in London, alphabetically ordered by name. 
+5. List the bookings for which no date_to has been specified. 
+6. How many hotels are there? 
+7. List the rooms that are currently unoccupied at the Grosvenor Hotel. 
+8. What is the lost income from unoccupied rooms at each hotel today? 
+9. Create index on one of the field and show is performance in query. 
+10. Create one view on above database and query it. 
+
+
+1.SELECT * FROM Hotel;
+2.SELECT * FROM Hotel
+WHERE City = 'London';
+3.SELECT Guest.GuestName, Guest.GuestAddress
+FROM Guest
+JOIN Booking ON Guest.GuestNo = Booking.GuestNo
+WHERE Booking.HotelNo = (SELECT HotelNo FROM Hotel WHERE Name = 'Grosvenor Hotel')
+  AND Booking.DateFrom <= CURDATE() 
+  AND Booking.DateTo >= CURDATE();
+4.SELECT GuestName, GuestAddress
+FROM Guest
+JOIN Booking ON Guest.GuestNo = Booking.GuestNo
+JOIN Hotel ON Booking.HotelNo = Hotel.HotelNo
+WHERE Hotel.City = 'London'
+ORDER BY GuestName;
+5.SELECT * FROM Booking
+WHERE DateTo IS NULL;
+6.SELECT COUNT(*) AS TotalHotels
+FROM Hotel;
+7.SELECT Room.*
+FROM Room
+ JOIN Booking ON Room.RoomNo = Booking.RoomNo AND Room.HotelNo = Booking.HotelNo
+JOIN Hotel ON Room.HotelNo = Hotel.HotelNo
+WHERE Hotel.Name = 'Grosvenor Hotel'
+  AND (Booking.DateFrom IS NULL OR CURRENT_DATE NOT BETWEEN Booking.DateFrom AND Booking.DateTo);
+8.SELECT Hotel.Name AS HotelName, SUM(Room.Price) AS LostIncome
+FROM Room
+LEFT JOIN Booking ON Room.RoomNo = Booking.RoomNo 
+                  AND Room.HotelNo = Booking.HotelNo 
+                  AND CURRENT_DATE BETWEEN Booking.DateFrom AND Booking.DateTo
+JOIN Hotel ON Room.HotelNo = Hotel.HotelNo
+WHERE Booking.RoomNo IS NULL
+GROUP BY Hotel.Name;
+9.CREATE INDEX idx_roomno ON Room(RoomNo);
+SELECT * FROM Room WHERE RoomNo = 101;
+10.CREATE VIEW GuestBookings AS
+SELECT G.GuestName, G.GuestAddress, H.Name AS HotelName, R.Type AS RoomType, B.DateFrom, B.DateTo
+FROM Guest G
+JOIN Booking B ON G.GuestNo = B.GuestNo
+JOIN Hotel H ON B.HotelNo = H.HotelNo
+JOIN Room R ON B.RoomNo = R.RoomNo;
+SELECT * FROM GuestBookings;

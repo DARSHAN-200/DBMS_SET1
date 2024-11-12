@@ -1,0 +1,56 @@
+5.5. The following tables form part of a database held in a relational DBMS: 
+Hotel (HotelNo, Name, City) HotelNo is the primary key 
+Room (RoomNo, HotelNo, Type, Price) 
+Booking (HotelNo, GuestNo, DateFrom, DateTo, RoomNo) 
+Guest (GuestNo, GuestName, GuestAddress) 
+Solve following queries by SQL 
+1. List full details of all hotels. 
+2. How many hotels are there? 
+3. List the price and type of all rooms at the Grosvenor Hotel. 
+4. List the number of rooms in each hotel 
+5. List all guests currently staying at the Grosvenor Hotel. 
+6. List all double or family rooms with a price below £40.00 per night, in ascending order of 
+price. 
+7. How many different guests have made bookings for August? 
+8. What is the total income from bookings for the Grosvenor Hotel today? 
+9. What is the most commonly booked room type for each hotel in London? 
+10. Update the price of all rooms by 5%.
+
+
+1.SELECT * FROM Hotel;
+2.SELECT COUNT(*) AS NumberOfHotels FROM Hotel;
+3.SELECT R.Price, R.Type
+FROM Room R
+JOIN Hotel H ON R.HotelNo = H.HotelNo
+WHERE H.Name = 'Grosvenor Hotel';
+4.SELECT H.Name, COUNT(R.RoomNo) AS NumberOfRooms
+FROM Hotel H
+JOIN Room R ON H.HotelNo = R.HotelNo
+GROUP BY H.HotelNo;
+5.SELECT G.GuestName, G.GuestAddress
+FROM Guest G
+JOIN Booking B ON G.GuestNo = B.GuestNo
+JOIN Hotel H ON B.HotelNo = H.HotelNo
+WHERE H.Name = 'Grosvenor Hotel' AND B.DateFrom <= CURDATE() AND B.DateTo >= CURDATE();
+6.SELECT RoomNo, Type, Price
+FROM Room
+WHERE (Type = 'Double' OR Type = 'Family') AND Price < 40
+ORDER BY Price ASC;
+7.SELECT COUNT(DISTINCT GuestNo) AS NumberOfGuests 
+FROM Booking  
+WHERE MONTH(DateFrom) = 8 OR MONTH(DateTo) = 8;
+8.SELECT SUM(R.Price) AS TotalIncome
+FROM Room R
+JOIN Booking B ON B.RoomNo = R.RoomNo 
+JOIN Hotel H ON B.HotelNo = H.HotelNo
+WHERE H.Name = 'Grosvenor Hotel' 
+AND B.DateFrom <= CURDATE() 
+AND B.DateTo >= CURDATE();
+9.SELECT H.Name AS HotelName, R.Type AS MostBookedRoomType, COUNT(B.GuestNo) AS BookingCount
+FROM Hotel H
+JOIN Room R ON H.HotelNo = R.HotelNo
+JOIN Booking B ON R.RoomNo = B.RoomNo
+WHERE H.City = 'London'
+GROUP BY H.HotelNo, H.Name, R.Type
+ORDER BY H.HotelNo, BookingCount DESC;
+10.

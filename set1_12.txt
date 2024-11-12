@@ -1,0 +1,135 @@
+12. Create the following tables. Solve  queries by SQL 
+•  Deposit (actno,cname,bname,amount,adate) 
+• Branch (bname,city) 
+• Customers (cname, city) 
+• Borrow(loanno,cname,bname, amount) 
+Add primary key and foreign key wherever applicable. 
+Insert data into the above created tables. 
+Solve following queries by SQL 
+1. Display customer name having living city Bombay and branch city Nagpur 
+2. Display customer name having same living city as their branch city 
+3. Display customer name who are borrowers as well as depositors and having 
+living city Nagpur. 
+4. Display borrower names having deposit amount greater than 1000 and loan 
+amount greater than 2000 
+5. Display customer name living in the city where branch of depositor sunil is 
+located. 
+6. Create an index on deposit table 
+
+
+Step 1: Creating Tables with Primary and Foreign Keys
+
+-- Creating Branch Table
+CREATE TABLE Branch (
+    bname VARCHAR(50) PRIMARY KEY,
+    city VARCHAR(50)
+);
+
+-- Creating Customers Table
+CREATE TABLE Customers (
+    cname VARCHAR(50) PRIMARY KEY,
+    city VARCHAR(50)
+);
+
+-- Creating Deposit Table with Foreign Key References
+CREATE TABLE Deposit (
+    actno INT PRIMARY KEY,
+    cname VARCHAR(50),
+    bname VARCHAR(50),
+    amount DECIMAL(10, 2),
+    adate DATE,
+    FOREIGN KEY (cname) REFERENCES Customers(cname),
+    FOREIGN KEY (bname) REFERENCES Branch(bname)
+);
+
+-- Creating Borrow Table with Foreign Key References
+CREATE TABLE Borrow (
+    loanno INT PRIMARY KEY,
+    cname VARCHAR(50),
+    bname VARCHAR(50),
+    amount DECIMAL(10, 2),
+    FOREIGN KEY (cname) REFERENCES Customers(cname),
+    FOREIGN KEY (bname) REFERENCES Branch(bname)
+);
+
+
+Step 2: Inserting Sample Data
+
+-- Inserting Data into Branch Table
+INSERT INTO Branch (bname, city) VALUES
+('NAGPUR_BRANCH', 'Nagpur'),
+('BOMBAY_BRANCH', 'Bombay');
+
+-- Inserting Data into Customers Table
+INSERT INTO Customers (cname, city) VALUES
+('Anil', 'Bombay'),
+('Sunil', 'Nagpur'),
+('Alice', 'Nagpur'),
+('John', 'Bombay');
+
+-- Inserting Data into Deposit Table
+INSERT INTO Deposit (actno, cname, bname, amount, adate) VALUES
+(1001, 'Anil', 'BOMBAY_BRANCH', 1500, '2023-03-01'),
+(1002, 'Sunil', 'NAGPUR_BRANCH', 2000, '2023-04-01'),
+(1003, 'Alice', 'NAGPUR_BRANCH', 3000, '2023-05-01');
+
+-- Inserting Data into Borrow Table
+INSERT INTO Borrow (loanno, cname, bname, amount) VALUES
+(2001, 'Anil', 'BOMBAY_BRANCH', 2500),
+(2002, 'Sunil', 'NAGPUR_BRANCH', 1500),
+(2003, 'Alice', 'NAGPUR_BRANCH', 3500);
+
+
+Step 3: Queries
+Query 1: Display customer name living in city Bombay and branch city Nagpur.
+
+SELECT c.cname 
+FROM Customers c 
+JOIN Deposit d ON c.cname = d.cname
+JOIN Branch b ON d.bname = b.bname
+WHERE c.city = 'Bombay' AND b.city = 'Nagpur';
+
+
+Query 2: Display customer name having the same living city as their branch city.
+
+SELECT c.cname 
+FROM Customers c 
+JOIN Deposit d ON c.cname = d.cname
+JOIN Branch b ON d.bname = b.bname
+WHERE c.city = b.city;
+
+Query 3: Display customer name who are borrowers as well as depositors and living in city Nagpur.
+
+SELECT DISTINCT c.cname
+FROM Customers c
+JOIN Deposit d ON c.cname = d.cname
+JOIN Borrow b ON c.cname = b.cname
+WHERE c.city = 'Nagpur';
+
+
+Query 4: Display borrower names having deposit amount greater than 1000 and loan amount greater than 2000.
+
+SELECT DISTINCT c.cname
+FROM Customers c
+JOIN Deposit d ON c.cname = d.cname
+JOIN Borrow b ON c.cname = b.cname
+WHERE d.amount > 1000 AND b.amount > 2000;
+
+
+Query 5: Display customer name living in the city where the branch of depositor Sunil is located
+
+SELECT c.cname 
+FROM Customers c
+JOIN Deposit d ON c.cname = d.cname
+JOIN Branch b ON d.bname = b.bname
+WHERE b.city = (SELECT br.city FROM Branch br 
+                JOIN Deposit de ON br.bname = de.bname 
+                WHERE de.cname = 'Sunil');
+
+
+Query 6: Create an index on the Deposit table.
+
+CREATE INDEX idx_deposit_amount ON Deposit(amount);
+
+
+

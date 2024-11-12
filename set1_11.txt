@@ -1,0 +1,119 @@
+11. Create the following tables. Solve  queries by SQL 
+•  Deposit (actno,cname,bname,amount,adate) 
+• Branch (bname,city) 
+• Customers (cname, city) 
+• Borrow(loanno,cname,bname, amount) 
+Add primary key and foreign key wherever applicable. 
+Insert data into the above created tables. 
+a. Display account date of customers Anil. 
+b. Modify the size of attribute of amount in deposit 
+c. Display names of customers living in city pune. 
+d. Display  name of the city where branch KAROLBAGH is located. 
+e. Find the number of tuples in the customer relation 
+f. 
+Delete all the record of customers Sunil 
+g. Create a view on deposit table. 
+
+
+Step 1: Creating the Tables with Primary and Foreign Keys
+
+-- Creating Branch Table
+CREATE TABLE Branch (
+    bname VARCHAR(50) PRIMARY KEY,
+    city VARCHAR(50)
+);
+
+-- Creating Customers Table
+CREATE TABLE Customers (
+    cname VARCHAR(50) PRIMARY KEY,
+    city VARCHAR(50)
+);
+
+-- Creating Deposit Table with Foreign Key References
+CREATE TABLE Deposit (
+    actno INT PRIMARY KEY,
+    cname VARCHAR(50),
+    bname VARCHAR(50),
+    amount DECIMAL(10, 2),
+    adate DATE,
+    FOREIGN KEY (cname) REFERENCES Customers(cname),
+    FOREIGN KEY (bname) REFERENCES Branch(bname)
+);
+
+-- Creating Borrow Table with Foreign Key References
+CREATE TABLE Borrow (
+    loanno INT PRIMARY KEY,
+    cname VARCHAR(50),
+    bname VARCHAR(50),
+    amount DECIMAL(10, 2),
+    FOREIGN KEY (cname) REFERENCES Customers(cname),
+    FOREIGN KEY (bname) REFERENCES Branch(bname)
+);
+
+
+Step 2: Inserting Sample Data
+
+-- Inserting Data into Branch Table
+INSERT INTO Branch (bname, city) VALUES
+('KAROLBAGH', 'Delhi'),
+('PERRYRIDGE', 'Mumbai');
+
+-- Inserting Data into Customers Table
+INSERT INTO Customers (cname, city) VALUES
+('Anil', 'Pune'),
+('John', 'Delhi'),
+('Alice', 'Mumbai'),
+('Sunil', 'Pune');
+
+-- Inserting Data into Deposit Table
+INSERT INTO Deposit (actno, cname, bname, amount, adate) VALUES
+(1001, 'Anil', 'KAROLBAGH', 8000, '2023-03-01'),
+(1002, 'John', 'PERRYRIDGE', 5000, '2023-04-01'),
+(1003, 'Alice', 'KAROLBAGH', 10000, '2023-05-01');
+
+-- Inserting Data into Borrow Table
+INSERT INTO Borrow (loanno, cname, bname, amount) VALUES
+(2001, 'Anil', 'KAROLBAGH', 3000),
+(2002, 'John', 'PERRYRIDGE', 4000),
+(2003, 'Alice', 'KAROLBAGH', 7000);
+
+
+Step 3: Queries
+Query (a): Display account date of customer Anil.
+
+SELECT adate 
+FROM Deposit 
+WHERE cname = 'Anil';
+
+Query (b): Modify the size of the attribute amount in the Deposit table.
+
+ALTER TABLE Deposit 
+MODIFY amount DECIMAL(15, 2);
+
+Query (c): Display names of customers living in city Pune.
+
+SELECT cname 
+FROM Customers 
+WHERE city = 'Pune';
+
+Query (d): Display the name of the city where the branch KAROLBAGH is located.
+
+SELECT city 
+FROM Branch 
+WHERE bname = 'KAROLBAGH';
+
+Query (e): Find the number of tuples in the Customers relation.
+
+SELECT COUNT(*) AS Number_of_Customers 
+FROM Customers;
+
+Query (f): Delete all records of customer Sunil.
+
+DELETE FROM Customers 
+WHERE cname = 'Sunil';
+
+Query (g): Create a view on the Deposit table.
+
+CREATE VIEW Deposit_View AS
+SELECT actno, cname, bname, amount, adate 
+FROM Deposit;

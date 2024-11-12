@@ -1,0 +1,94 @@
+1. Create a db called company consist of the following tables. 
+
+	1.Emp (eno,ename, job,hiredate,salary,commission,deptno,) 
+	2.dept(deptno,deptname,location) 
+	eno is  primary key in emp 
+	deptno is  primary key in dept 
+	Solve Queries by SQL 
+	1. List the maximum salary paid to salesman  
+	2. List name of emp whose name start with ‘I’ 
+	3. List details of emp who have joined before ’30-sept-81’ 
+	4. List the emp details in the descending order of their basic salary 
+	5. List of no. of emp & avg salary for emp in the dept no ‘20’ 
+	6. List the avg salary, minimum salary of the emp hiredatewise for dept no ‘10’. 
+	7. List emp name and its department 
+	8. List total salary paid to each department 
+	9. List details of employee working in ‘Dev’ department 
+	10. Update salary of all employees in deptno 10 by 5 %.
+
+
+CREATE DATABASE company;
+
+USE company;
+
+CREATE TABLE dept (
+    deptno INT PRIMARY KEY,
+    deptname VARCHAR(50),
+    location VARCHAR(50)
+);
+
+CREATE TABLE emp (
+    eno INT PRIMARY KEY,
+    ename VARCHAR(50),
+    job VARCHAR(50),
+    hiredate DATE,
+    salary DECIMAL(10, 2),
+    commission DECIMAL(10, 2),
+    deptno INT,
+    FOREIGN KEY (deptno) REFERENCES dept(deptno)
+);
+INSERT INTO dept (deptno, deptname, location) VALUES
+(10, 'HR', 'New York'),
+(20, 'Sales', 'Los Angeles'),
+(30, 'Dev', 'San Francisco');
+INSERT INTO emp (eno, ename, job, hiredate, salary, commission, deptno) VALUES
+(1, 'John', 'manager', '1980-06-20', 5000, NULL, 10),
+(2, 'Jane', 'salesman', '1981-07-15', 3000, 200, 20),
+(3, 'Mike', 'analyst', '1981-09-28', 4000, NULL, 10),
+(4, 'Alice', 'salesman', '1982-11-05', 2500, 150, 20),
+(5, 'Ian', 'clerk', '1981-09-15', 1800, NULL, 30),
+(6, 'Irene', 'analyst', '1983-03-12', 3200, NULL, 30),
+(7, 'Paul', 'salesman', '1982-10-20', 2800, 180, 20),
+(8, 'Nina', 'clerk', '1980-12-20', 1900, NULL, 10);
+1.SELECT MAX(salary) AS Max_Salary
+FROM emp
+WHERE job = 'salesman';
+
+2.SELECT ename
+FROM emp
+WHERE ename LIKE 'I%';
+
+3.SELECT *
+FROM emp
+WHERE hiredate < '1981-09-30';
+
+4.SELECT *
+FROM emp
+ORDER BY salary DESC;
+
+5.SELECT COUNT(*) AS No_of_Emp, AVG(salary) AS Avg_Salary
+FROM emp
+WHERE deptno = 20;
+
+6.SELECT hiredate, AVG(salary) AS Avg_Salary, MIN(salary) AS Min_Salary
+FROM emp
+WHERE deptno = 10
+GROUP BY hiredate;
+
+7.
+SELECT emp.ename, dept.deptname
+FROM emp
+JOIN dept ON emp.deptno = dept.deptno;
+
+8.SELECT deptno, SUM(salary) AS Total_Salary
+FROM emp
+GROUP BY deptno;
+
+9.SELECT emp.*
+FROM emp
+JOIN dept ON emp.deptno = dept.deptno
+WHERE dept.deptname = 'Dev';
+
+10.UPDATE emp
+SET salary = salary * 1.05
+WHERE deptno = 10;

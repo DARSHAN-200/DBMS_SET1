@@ -1,0 +1,106 @@
+3. The following tables form part of a database held in a relational DBMS: 
+Hotel (HotelNo, Name, City) HotelNo is the primary key 
+Room (RoomNo, HotelNo, Type, Price) 
+Booking (HotelNo, GuestNo, DateFrom, DateTo, RoomNo) 
+Guest (GuestNo, GuestName, GuestAddress) GuestNo is primary key 
+Room contains room details for each hotel and (HotelNo, RoomNo) forms the 
+primary key.Booking contains details of the bookings and the primary key comprises 
+(HotelNo, GuestNo and DateFrom) 
+Solve following queries by SQL 
+1. List full details of all hotels. 
+2. How many hotels are there? 
+3. List the price and type of all rooms at the Grosvenor Hotel. 
+4. List the number of rooms in each hotel. 
+5. Update the price of all rooms by 5%. 
+6. List full details of all hotels in London. 
+7. What is the average price of a room? 
+8. List all guests currently staying at the Grosvenor Hotel. 
+9. List the number of rooms in each hotel in London. 
+10. Create one view on above database and query it.
+
+-- Creating Hotel table
+CREATE TABLE Hotel (
+    HotelNo INT PRIMARY KEY,
+    Name VARCHAR(100),
+    City VARCHAR(100)
+);
+
+-- Creating Room table
+CREATE TABLE Room (
+    RoomNo INT,
+    HotelNo INT,
+    Type VARCHAR(50),
+    Price DECIMAL(10, 2),
+    PRIMARY KEY (HotelNo, RoomNo),
+    FOREIGN KEY (HotelNo) REFERENCES Hotel(HotelNo)
+);
+
+-- Creating Booking table
+CREATE TABLE Booking (
+    HotelNo INT,
+    GuestNo INT,
+    DateFrom DATE,
+    DateTo DATE,
+    RoomNo INT,
+    PRIMARY KEY (HotelNo, GuestNo, DateFrom),
+    FOREIGN KEY (HotelNo, RoomNo) REFERENCES Room(HotelNo, RoomNo)
+);
+
+-- Creating Guest table
+CREATE TABLE Guest (
+    GuestNo INT PRIMARY KEY,
+    GuestName VARCHAR(100),
+    GuestAddress VARCHAR(255)
+);
+-- Inserting data into Hotel table
+INSERT INTO Hotel (HotelNo, Name, City) VALUES
+(1, 'Grosvenor Hotel', 'London'),
+(2, 'Marriott', 'Paris'),
+(3, 'Hilton', 'London');
+
+-- Inserting data into Room table
+INSERT INTO Room (RoomNo, HotelNo, Type, Price) VALUES
+(101, 1, 'Single', 100.00),
+(102, 1, 'Double', 150.00),
+(201, 2, 'Single', 120.00),
+(202, 2, 'Suite', 250.00),
+(301, 3, 'Single', 110.00);
+
+-- Inserting data into Guest table
+INSERT INTO Guest (GuestNo, GuestName, GuestAddress) VALUES
+(1, 'Alice', '123 London St'),
+(2, 'Bob', '456 London St'),
+(3, 'Charlie', '789 Paris Ave');
+
+-- Inserting data into Booking table
+INSERT INTO Booking (HotelNo, GuestNo, DateFrom, DateTo, RoomNo) VALUES
+(1, 1, '2024-11-01', '2024-11-05', 101),
+(1, 2, '2024-11-05', '2024-11-07', 102),
+(3, 3, '2024-11-10', '2024-11-15', 301);
+
+1.SELECT * FROM Hotel;
+2.SELECT COUNT(*) AS HotelCount FROM Hotel;
+3.select Room.Price ,Room.Type from Room join Hotel on Hotel.HotelNo=Room.HotelNo where Hotel.Name='Grosvenor Hotel';
+4. select HotelNo, count(RoomNo) from Room group by HotelNo;
+5.UPDATE Room
+SET Price = Price * 1.05;
+6.SELECT * FROM Hotel
+WHERE City = 'London';
+7.SELECT AVG(Price) AS AveragePrice FROM Room;
+8.SELECT Guest.GuestName, Guest.GuestAddress
+FROM Guest
+JOIN Booking ON Guest.GuestNo = Booking.GuestNo
+WHERE Booking.HotelNo = (SELECT HotelNo FROM Hotel WHERE Name = 'Grosvenor Hotel')
+  AND Booking.DateFrom <= CURDATE() 
+  AND Booking.DateTo >= CURDATE();
+9.SELECT HotelNo, COUNT(RoomNo) AS RoomCount
+FROM Room
+WHERE HotelNo IN (SELECT HotelNo FROM Hotel WHERE City = 'London')
+GROUP BY HotelNo;
+10.CREATE VIEW GuestBookings AS
+SELECT G.GuestName, G.GuestAddress, H.Name AS HotelName, R.Type AS RoomType, B.DateFrom, B.DateTo
+FROM Guest G
+JOIN Booking B ON G.GuestNo = B.GuestNo
+JOIN Hotel H ON B.HotelNo = H.HotelNo
+JOIN Room R ON B.RoomNo = R.RoomNo;
+SELECT * FROM GuestBookings;

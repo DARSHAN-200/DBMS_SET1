@@ -1,0 +1,69 @@
+4. The following tables form part of a database held in a relational DBMS: 
+Hotel (HotelNo, Name, City) HotelNo is primary key 
+Room (RoomNo, HotelNo, Type, Price) 
+Booking (HotelNo, GuestNo, DateFrom, DateTo, RoomNo) 
+Guest (GuestNo, GuestName, GuestAddress) GuestNo is primary key 
+Solve following queries by SQL 
+1. 
+2. 
+What is the total revenue per night from all double rooms? 
+List the details of all rooms at the Grosvenor Hotel, including the name of 
+the guest staying in the room, if the room is occupied. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+What is the average number of bookings for each hotel in April? 
+Create index on one of the field and show is performance in query. 
+List full details of all hotels. 
+List full details of all hotels in London. 
+Update the price of all rooms by 5%. 
+List the number of rooms in each hotel in London. 
+List all double or family rooms with a price below £40.00 per night, in 
+ascending order of price.
+
+
+
+
+
+
+
+1.SELECT SUM(R.Price) AS TotalRevenue
+FROM Room R
+JOIN Booking B ON R.HotelNo = B.HotelNo AND R.RoomNo = B.RoomNo
+WHERE R.Type = 'Double'
+  AND B.DateFrom <= CURDATE() AND B.DateTo >= CURDATE();
+2.SELECT R.RoomNo, R.Type, R.Price, G.GuestName
+FROM Room R
+ JOIN Booking B ON R.HotelNo = B.HotelNo AND R.RoomNo = B.RoomNo
+ JOIN Guest G ON B.GuestNo = G.GuestNo
+WHERE R.HotelNo = (SELECT HotelNo FROM Hotel WHERE Name = 'Grosvenor Hotel');
+3.SELECT HotelNo, AVG(BookingCount) AS AvgAprilBookings
+FROM (
+    SELECT HotelNo, COUNT(*) AS BookingCount
+    FROM Booking
+    WHERE MONTH(DateFrom) = 4 OR MONTH(DateTo) = 4
+    GROUP BY HotelNo
+) AS HotelBookings
+GROUP BY HotelNo;
+
+
+4.CREATE INDEX idx_HotelNo ON Room(HotelNo);
+SELECT * FROM Room WHERE HotelNo = 1;
+5.SELECT * FROM Hotel;
+6.SELECT * FROM Hotel
+WHERE City = 'London';
+7.UPDATE Room
+SET Price = Price * 1.05;
+8.SELECT HotelNo, COUNT(RoomNo) AS RoomCount
+FROM Room
+WHERE HotelNo IN (SELECT HotelNo FROM Hotel WHERE City = 'London')
+GROUP BY HotelNo;
+
+9.SELECT RoomNo, Type, Price
+FROM Room
+WHERE (Type = 'Double' OR Type = 'Family') AND Price < 40
+ORDER BY Price ASC;

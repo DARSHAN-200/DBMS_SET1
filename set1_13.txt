@@ -1,0 +1,190 @@
+13) Create the following tables.    
+1)PUBLISHER( PID , PNAME ,ADDRESS ,STATE ,PHONE ,EMAILID ); 
+2)BOOK( ISBN ,BOOK_TITLE , CATEGORY , PRICE , COPYRIGHT_DATE , YEAR ,PAGE_COUNT ,PID ); 
+3) AUTHOR(AID,ANAME,STATE,CITY ,ZIP,PHONE,URL ) 
+4) AUTHOR_BOOK(AID,ISBN); 
+5) REVIEW(RID,ISBN,RATING); 
+Solve following queries by SQL        
+1. Retrieve city, phone, url of author whose name is ‘CHETAN BHAGAT’. 
+2. Retrieve book title, reviewable id and rating of all books. 
+3. Retrieve book title, price, author name and url for publishers ‘MEHTA’. 
+4. In a PUBLISHER relation change the phone number of ‘MEHTA’ to 123456 
+5. Calculate and display the average, maximum, minimum price of each publisher. 
+6. Delete details of all books having a page count less than 100. 
+7. Retrieve details of all authors residing in city Pune and whose name begins with character 
+‘C’. 
+8. Retrieve details of authors residing in same city as ‘Korth’. 
+9. Create a procedure to update the value of page count of a book of given ISBN. 
+10. Create a function that returns the price of book with a given ISBN.  
+
+
+Step 1: Creating the Tables with Primary and Foreign Keys
+
+-- Creating PUBLISHER Table
+CREATE TABLE Publisher (
+    PID INT PRIMARY KEY,
+    PNAME VARCHAR(50),
+    ADDRESS VARCHAR(100),
+    STATE VARCHAR(50),
+    PHONE VARCHAR(15),
+    EMAILID VARCHAR(50)
+);
+
+-- Creating BOOK Table with Foreign Key Reference to PUBLISHER
+CREATE TABLE Book (
+    ISBN INT PRIMARY KEY,
+    BOOK_TITLE VARCHAR(100),
+    CATEGORY VARCHAR(50),
+    PRICE DECIMAL(10, 2),
+    COPYRIGHT_DATE DATE,
+    YEAR INT,
+    PAGE_COUNT INT,
+    PID INT,
+    FOREIGN KEY (PID) REFERENCES Publisher(PID)
+);
+
+-- Creating AUTHOR Table
+CREATE TABLE Author (
+    AID INT PRIMARY KEY,
+    ANAME VARCHAR(100),
+    STATE VARCHAR(50),
+    CITY VARCHAR(50),
+    ZIP VARCHAR(10),
+    PHONE VARCHAR(15),
+    URL VARCHAR(100)
+);
+
+-- Creating AUTHOR_BOOK Table with Foreign Keys
+CREATE TABLE Author_Book (
+    AID INT,
+    ISBN INT,
+    FOREIGN KEY (AID) REFERENCES Author(AID),
+    FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
+);
+
+-- Creating REVIEW Table with Foreign Key Reference to BOOK
+CREATE TABLE Review (
+    RID INT PRIMARY KEY,
+    ISBN INT,
+    RATING DECIMAL(3, 2),
+    FOREIGN KEY (ISBN) REFERENCES Book(ISBN)
+);
+
+
+Step 2: Sample Data Insertion
+
+-- Inserting Data into Publisher Table
+INSERT INTO Publisher (PID, PNAME, ADDRESS, STATE, PHONE, EMAILID) VALUES
+(1, 'MEHTA', '123 Publisher St.', 'Maharashtra', '9988776655', 'mehta@publishers.com');
+
+-- Inserting Data into Author Table
+INSERT INTO Author (AID, ANAME, STATE, CITY, ZIP, PHONE, URL) VALUES
+(1, 'CHETAN BHAGAT', 'Maharashtra', 'Mumbai', '400001', '9876543210', 'http://chetanbhagat.com'),
+(2, 'Korth', 'Maharashtra', 'Mumbai', '400002', '8765432109', 'http://korth.com');
+
+-- Inserting Data into Book Table
+INSERT INTO Book (ISBN, BOOK_TITLE, CATEGORY, PRICE, COPYRIGHT_DATE, YEAR, PAGE_COUNT, PID) VALUES
+(1001, 'Book A', 'Fiction', 500, '2020-01-01', 2020, 200, 1),
+(1002, 'Book B', 'Fiction', 700, '2019-01-01', 2019, 150, 1);
+
+-- Inserting Data into Author_Book Table
+INSERT INTO Author_Book (AID, ISBN) VALUES
+(1, 1001), (2, 1002);
+
+-- Inserting Data into Review Table
+INSERT INTO Review (RID, ISBN, RATING) VALUES
+(1, 1001, 4.5),
+(2, 1002, 3.8);
+
+
+Step 3: Queries
+Query 1: Retrieve city, phone, and URL of the author whose name is 'CHETAN BHAGAT'.
+
+SELECT CITY, PHONE, URL 
+FROM Author 
+WHERE ANAME = 'CHETAN BHAGAT';
+
+Query 2: Retrieve book title, review ID, and rating of all books.
+
+SELECT b.BOOK_TITLE, r.RID, r.RATING 
+FROM Book b 
+JOIN Review r ON b.ISBN = r.ISBN;
+
+
+Query 3: Retrieve book title, price, author name, and URL for publishers 'MEHTA'.
+
+SELECT b.BOOK_TITLE, b.PRICE, a.ANAME, a.URL 
+FROM Book b 
+JOIN Publisher p ON b.PID = p.PID
+JOIN Author_Book ab ON b.ISBN = ab.ISBN
+JOIN Author a ON ab.AID = a.AID
+WHERE p.PNAME = 'MEHTA';
+
+
+Query 4: In the Publisher table, change the phone number of 'MEHTA' to 123456.
+
+UPDATE Publisher 
+SET PHONE = '123456' 
+WHERE PNAME = 'MEHTA';
+
+
+Query 5: Calculate and display the average, maximum, and minimum price of each publisher.
+
+SELECT p.PNAME, AVG(b.PRICE) AS Avg_Price, MAX(b.PRICE) AS Max_Price, MIN(b.PRICE) AS Min_Price 
+FROM Book b 
+JOIN Publisher p ON b.PID = p.PID
+GROUP BY p.PNAME;
+
+Query 6: Delete details of all books having a page count less than 100.
+
+DELETE FROM Book 
+WHERE PAGE_COUNT < 100;
+
+
+Query 7: Retrieve details of all authors residing in city Pune and whose name begins with the character 'C'.
+
+SELECT * 
+FROM Author 
+WHERE CITY = 'Pune' AND ANAME LIKE 'C%';
+
+
+Query 8: Retrieve details of authors residing in the same city as 'Korth'.
+
+SELECT * 
+FROM Author 
+WHERE CITY = (SELECT CITY FROM Author WHERE ANAME = 'Korth');
+
+
+Step 4: Creating a Stored Procedure and a Function
+Query 9: Create a procedure to update the value of page count of a book of a given ISBN.
+
+DELIMITER //
+
+CREATE PROCEDURE UpdatePageCount(IN bookISBN INT, IN newPageCount INT)
+BEGIN
+    UPDATE Book 
+    SET PAGE_COUNT = newPageCount 
+    WHERE ISBN = bookISBN;
+END //
+
+DELIMITER ;
+CALL UpdatePageCount(1001, 250);
+
+
+Query 10: Create a function that returns the price of a book with a given ISBN.
+
+DELIMITER //
+
+CREATE FUNCTION GetBookPrice(bookISBN INT) 
+RETURNS DECIMAL(10, 2)
+BEGIN
+    DECLARE bookPrice DECIMAL(10, 2);
+    SELECT PRICE INTO bookPrice 
+    FROM Book 
+    WHERE ISBN = bookISBN;
+    RETURN bookPrice;
+END //
+
+DELIMITER ;
+SELECT GetBookPrice(1001);
+
