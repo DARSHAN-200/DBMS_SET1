@@ -1,0 +1,170 @@
+18.Trigger  
+a) Write a update, delete trigger on clientmstr table. The System should keep track of the 
+records that ARE BEING updated or deleted. The old value of updated or deleted records 
+should be added in audit_trade table. (separate implementation using both row and statement 
+triggers). 
+b) Write a before trigger for Insert, update event considering following requirement: 
+Emp(e_no, e_name, salary) I) Trigger action should be initiated when salary is tried to be 
+inserted is less than Rs. 50,000/- II) Trigger action should be initiated when salary is tried to be 
+updated for value less than Rs. 50,000/- Action should be rejection of update or Insert 
+operation by displaying appropriate error message. Also the new values expected to be inserted 
+will be stored in new table Tracking(e_no, salary). 
+
+
+
+Part (a): Update and Delete Triggers on clientmstr Table
+
+
+CREATE TABLE audit_trade (
+    action_type VARCHAR(10),
+    client_id INT,
+    client_name VARCHAR(50),
+    old_value TEXT,
+    action_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+Row-Level Triggers
+Row-level triggers operate on each row that is updated or deleted.
+
+Row-Level Update Trigger
+
+
+DELIMITER //
+
+CREATE TRIGGER after_update_clientmstr_row
+AFTER UPDATE ON clientmstr
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_trade (action_type, client_id, client_name, old_value)
+    VALUES ('UPDATE', OLD.client_id, OLD.client_name, OLD.client_data);
+END //
+
+DELIMITER ;
+
+
+
+Row-Level Delete Trigger
+
+
+DELIMITER //
+
+CREATE TRIGGER after_delete_clientmstr_row
+AFTER DELETE ON clientmstr
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_trade (action_type, client_id, client_name, old_value)
+    VALUES ('DELETE', OLD.client_id, OLD.client_name, OLD.client_data);
+END //
+
+DELIMITER ;
+
+
+
+Statement-Level Triggers
+Statement-level triggers operate once per triggering statement, regardless of the number of rows affected.
+
+Statement-Level Update Trigger
+
+
+DELIMITER //
+
+CREATE TRIGGER after_update_clientmstr_statement
+AFTER UPDATE ON clientmstr
+BEGIN
+    INSERT INTO audit_trade (action_type, action_date)
+    VALUES ('UPDATE', CURRENT_TIMESTAMP);
+END //
+
+DELIMITER ;
+
+
+
+Statement-Level Delete Trigge
+
+
+DELIMITER //
+
+CREATE TRIGGER after_delete_clientmstr_statement
+AFTER DELETE ON clientmstr
+BEGIN
+    INSERT INTO audit_trade (action_type, action_date)
+    VALUES ('DELETE', CURRENT_TIMESTAMP);
+END //
+
+DELIMITER ;
+
+
+
+
+
+Part (b): Insert and Update Trigger for Salary Validation on Emp Table
+
+
+
+
+Step 1: Create the Tracking Table
+
+
+CREATE TABLE Tracking (
+    e_no INT,
+    salary DECIMAL(10, 2),
+    action_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+Insert Trigger for Salary Validation
+
+
+DELIMITER //
+
+CREATE TRIGGER before_insert_emp
+BEFORE INSERT ON Emp
+FOR EACH ROW
+BEGIN
+    IF NEW.salary < 50000 THEN
+        -- Store the attempted insert data in Tracking table
+        INSERT INTO Tracking (e_no, salary)
+        VALUES (NEW.e_no, NEW.salary);
+        
+        -- Signal an error to prevent the insertion
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Error: Salary must be at least 50,000 for insert operation.';
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+Update Trigger for Salary Validation
+
+
+
+DELIMITER //
+
+CREATE TRIGGER before_update_emp
+BEFORE UPDATE ON Emp
+FOR EACH ROW
+BEGIN
+    IF NEW.salary < 50000 THEN
+        -- Store the attempted update data in Tracking table
+        INSERT INTO Tracking (e_no, salary)
+        VALUES (NEW.e_no, NEW.salary);
+        
+        -- Signal an error to prevent the update
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Error: Salary must be at least 50,000 for update operation.';
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+
+Explanation
+Part (a): Row-level and statement-level triggers on clientmstr track changes (update or delete) by logging data into audit_trade.
+Part (b): Before-insert and before-update triggers on Emp check if the salary is at least 50,000. If it isn’t, the trigger logs the attempt in Tracking and rejects the operation.
+

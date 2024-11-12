@@ -1,0 +1,127 @@
+16. Cursor (Any Two) 
+a) The bank manager has decided to activate all those accounts which were previously marked as 
+inactive for performing no transaction in last 365 days. Write a PL/SQ block (using implicit 
+cursor) to update the status of account, display an approximate message based on the no. of rows 
+affected by the update.  (Use of %FOUND, %NOTFOUND, %ROWCOUNT) 
+b)Organization has decided to increase the salary of employees by 10% of existing salary, who 
+are having salary less than average salary of organization, Whenever such salary updates takes 
+place, a record for the same is maintained in the increment_salary table. 
+c) Write PL/SQL block using explicit cursor for following requirements: College has decided to 
+mark all those students detained (D) who are having attendance less than 75%. Whenever such 
+update takes place, a record for the same is maintained in the D_Stud table. create table 
+stud21(roll number(4), att number(4), status varchar(1)); 
+
+
+Solution (a): Activate Inactive Accounts (Using Implicit Cursor)
+
+In this PL/SQL block, we update the account statuses for accounts that have been inactive for 365 days and display the number of rows affected using %FOUND, %NOTFOUND, and %ROWCOUNT attributes.
+
+
+DECLARE
+    -- Count variable to store the number of rows affected
+    v_rows_updated NUMBER := 0;
+BEGIN
+    -- Update the account status to 'active' where the last transaction was over 365 days ago
+    UPDATE Accounts
+    SET status = 'Active'
+    WHERE status = 'Inactive' AND 
+          last_transaction_date <= SYSDATE - 365;
+
+    -- Check if any rows were updated
+    IF SQL%FOUND THEN
+        v_rows_updated := SQL%ROWCOUNT;
+        DBMS_OUTPUT.PUT_LINE(v_rows_updated || ' accounts have been activated.');
+    ELSIF SQL%NOTFOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No accounts were found inactive for more than 365 days.');
+    END IF;
+END;
+
+Explanation
+Implicit Cursor: The UPDATE statement uses an implicit cursor.
+%FOUND and %NOTFOUND: These attributes check if any rows were updated.
+%ROWCOUNT: Displays the total number of rows affected by the update.
+
+Solution (b): Increase Salary of Employees Below Average Salary (Using Implicit Cursor)
+
+In this block, we update the salary for employees earning below the organization's average. Each update is logged in the increment_salary table.
+
+
+DECLARE
+    v_avg_salary NUMBER;
+BEGIN
+    -- Calculate the average salary
+    SELECT AVG(salary) INTO v_avg_salary FROM Employee;
+
+    -- Update salary for employees earning below average
+    UPDATE Employee
+    SET salary = salary * 1.10
+    WHERE salary < v_avg_salary;
+
+    -- Log each update into the increment_salary table
+    INSERT INTO increment_salary (emp_id, incremented_salary)
+    SELECT emp_id, salary
+    FROM Employee
+    WHERE salary < v_avg_salary;
+
+    -- Check if updates were made
+    IF SQL%FOUND THEN
+        DBMS_OUTPUT.PUT_LINE(SQL%ROWCOUNT || ' employees had their salary increased.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('No salary updates were made.');
+    END IF;
+END;
+
+
+Explanation
+Average Salary Calculation: The average salary is calculated and stored in v_avg_salary.
+Update and Insert Statements: The UPDATE adjusts salaries, while INSERT logs each update in increment_salary.
+SQL%FOUND and SQL%ROWCOUNT: Used to display the number of affected rows.
+
+Solution (c): Mark Students as Detained (Using Explicit Cursor)
+
+In this block, we use an explicit cursor to update the status of students who have an attendance below 75% and log each update in the D_Stud table.
+
+
+
+DECLARE
+    -- Declare a cursor to select students with attendance below 75%
+    CURSOR student_cursor IS
+        SELECT roll, att
+        FROM stud21
+        WHERE att < 75;
+
+    v_roll stud21.roll%TYPE;
+    v_att stud21.att%TYPE;
+BEGIN
+    OPEN student_cursor;
+
+    LOOP
+        FETCH student_cursor INTO v_roll, v_att;
+
+        -- Exit if no more rows are found
+        EXIT WHEN student_cursor%NOTFOUND;
+
+        -- Update student status to 'D' for detained
+        UPDATE stud21
+        SET status = 'D'
+        WHERE roll = v_roll;
+
+        -- Insert a record into D_Stud table
+        INSERT INTO D_Stud (roll, att, status)
+        VALUES (v_roll, v_att, 'D');
+
+        DBMS_OUTPUT.PUT_LINE('Student Roll No: ' || v_roll || ' marked as detained.');
+    END LOOP;
+
+    CLOSE student_cursor;
+END;
+
+
+
+Explanation
+Explicit Cursor: student_cursor selects students with attendance below 75%.
+Cursor Loop: The FETCH statement retrieves each student’s record, updating and inserting each as detained.
+Logging in D_Stud: Logs each update in the D_Stud table for students marked as detained.
+
+
+

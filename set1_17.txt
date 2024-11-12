@@ -1,0 +1,104 @@
+17. Cursor (Any Two) 
+a) The bank manager has decided to activate all those accounts which were previously marked as 
+inactive for performing no transaction in last 365 days. Write a PL/SQ block (using implicit 
+cursor) to update the status of account, display an approximate message based on the no. of rows 
+affected by the update.  (Use of %FOUND, %NOTFOUND, %ROWCOUNT) 
+b)Write a PL/SQL block of code using parameterized Cursor, that will merge the data available 
+in the newly created table N_RollCall with the data available in the table O_RollCall. If the 
+data in the first table already exist in the second table then that data should be skipped. output: 
+c)Write the PL/SQL block for following requirements using parameterized Cursor: Consider 
+table EMP(e_no, d_no, Salary), department wise average salary should be inserted into new 
+table dept_salary(d_no, Avg_salary)
+
+
+Scenario a: Activating Inactive Accounts
+This PL/SQL block uses an implicit cursor to update the status of accounts that have been inactive for more than 365 days. It uses %FOUND, %NOTFOUND, and %ROWCOUNT to display feedback based on the update.
+
+DECLARE
+    v_updated_rows NUMBER;
+BEGIN
+    -- Update accounts that have been inactive for the last 365 days
+    UPDATE Account
+    SET status = 'Active'
+    WHERE status = 'Inactive' AND last_transaction_date < SYSDATE - 365;
+    
+    -- Get the number of rows affected
+    v_updated_rows := SQL%ROWCOUNT;
+    
+    -- Display a message based on the result
+    IF SQL%FOUND THEN
+        DBMS_OUTPUT.PUT_LINE(v_updated_rows || ' accounts have been activated.');
+    ELSIF SQL%NOTFOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No accounts were found that need activation.');
+    END IF;
+END;
+
+
+Scenario b: Merging Data Using a Parameterized Cursor
+This PL/SQL block uses a parameterized cursor to merge data from the N_RollCall table into the O_RollCall table. It skips rows if they already exist in the O_RollCall table.
+
+DECLARE
+    CURSOR c_rollcall(p_roll_id INT) IS
+        SELECT roll_id, student_name, date
+        FROM N_RollCall
+        WHERE roll_id = p_roll_id;
+        
+    v_roll_id N_RollCall.roll_id%TYPE;
+    v_student_name N_RollCall.student_name%TYPE;
+    v_date N_RollCall.date%TYPE;
+BEGIN
+    FOR rec IN (SELECT roll_id FROM N_RollCall) LOOP
+        -- Open the cursor for each roll_id
+        OPEN c_rollcall(rec.roll_id);
+        
+        FETCH c_rollcall INTO v_roll_id, v_student_name, v_date;
+        
+        IF c_rollcall%FOUND THEN
+            -- Check if the record already exists in O_RollCall
+            IF NOT EXISTS (SELECT 1 FROM O_RollCall WHERE roll_id = v_roll_id) THEN
+                INSERT INTO O_RollCall (roll_id, student_name, date)
+                VALUES (v_roll_id, v_student_name, v_date);
+            END IF;
+        END IF;
+        
+        CLOSE c_rollcall;
+    END LOOP;
+    
+    DBMS_OUTPUT.PUT_LINE('Data merging completed.');
+END;
+
+
+Scenario c: Inserting Department-wise Average Salary into dept_salary Table
+This PL/SQL block uses a parameterized cursor to calculate and insert the department-wise average salary into the dept_salary table.
+
+DECLARE
+    CURSOR c_avg_salary(p_d_no EMP.d_no%TYPE) IS
+        SELECT AVG(Salary) AS Avg_salary
+        FROM EMP
+        WHERE d_no = p_d_no;
+        
+    v_d_no EMP.d_no%TYPE;
+    v_avg_salary NUMBER;
+BEGIN
+    -- Loop through each department in the EMP table
+    FOR rec IN (SELECT DISTINCT d_no FROM EMP) LOOP
+        OPEN c_avg_salary(rec.d_no);
+        
+        FETCH c_avg_salary INTO v_avg_salary;
+        
+        -- Insert the average salary into dept_salary table
+        INSERT INTO dept_salary (d_no, Avg_salary)
+        VALUES (rec.d_no, v_avg_salary);
+        
+        CLOSE c_avg_salary;
+    END LOOP;
+    
+    DBMS_OUTPUT.PUT_LINE('Department-wise average salary has been inserted into dept_salary table.');
+END;
+
+
+
+Explanation
+Scenario a: Uses an implicit cursor to update inactive accounts and display the number of accounts activated.
+Scenario b: Uses a parameterized cursor to merge records from N_RollCall to O_RollCall, checking if each record already exists.
+Scenario c: Calculates department-wise average salary using a parameterized cursor and inserts it into the dept_salary table.
