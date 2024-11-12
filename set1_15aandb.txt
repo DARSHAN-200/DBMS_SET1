@@ -1,0 +1,119 @@
+15.15.  
+a) Write an SQL code block these raise a user defined exception where business rule is 
+voilated. BR for client_ master table specifies when the value of  bal_due field is less than 0 
+handle the exception. 
+
+CREATE TABLE client_master (
+    client_id INT PRIMARY KEY,
+    client_name VARCHAR(100),
+    bal_due DECIMAL(10, 2)
+);
+INSERT INTO client_master (client_id, client_name, bal_due) VALUES
+(1, 'John Doe', 100.00),
+(2, 'Jane Smith', -50.00),
+(3, 'Alice Johnson', 200.00);
+DELIMITER //
+
+CREATE PROCEDURE CheckBalanceDue(IN input_client_id INT)
+BEGIN
+    DECLARE balance DECIMAL(10, 2);
+
+    -- Fetch the balance due for the given client_id, ensuring only one row is selected
+    SELECT bal_due INTO balance
+    FROM client_master
+    WHERE client_id = input_client_id;  -- Use the input parameter to avoid confusion
+
+    -- Check if the balance is less than 0
+    IF balance < 0 THEN
+        -- Raise a user-defined exception if the balance is negative
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Error: The balance due cannot be negative.';
+    ELSE
+        SELECT 'Balance is valid' AS Status;
+    END IF;
+
+END;
+//
+
+DELIMITER ;
+CALL CheckBalanceDue(1);
+
+b) Write an SQL code block 
+Borrow(Roll_no, Name, DateofIssue, NameofBook, Status) 
+Fine(Roll_no,Date,Amt) 
+Accept roll_no & name of book from user. Check the number of days (from date of issue), if 
+days are between 15 to 30 then fine amount will be Rs 5per day. If no. of days>30, per day fine 
+will be Rs 50 per day & for days less than 30, Rs. 5 per day. After submitting the book, status 
+will change from I to R. If condition of fine is true, then details will be stored into fine table. 
+Also handles the exception by named exception handler or user define exception handler. 
+
+
+
+CREATE TABLE Borrow (
+    Roll_no INT,
+    Name VARCHAR(100),
+    DateofIssue DATE,
+    NameofBook VARCHAR(255),
+    Status CHAR(1),
+    PRIMARY KEY (Roll_no, NameofBook)
+);
+ CREATE TABLE Fine (
+    Roll_no INT,
+    Date DATE,
+    Amt DECIMAL(10, 2)
+);
+INSERT INTO Borrow (Roll_no, Name, DateofIssue, NameofBook, Status) VALUES
+(101, 'John Doe', '2023-10-01', 'Database Systems', 'I'),
+(102, 'Jane Smith', '2023-09-15', 'Algorithms', 'I'),
+(103, 'Alice Johnson', '2023-11-01', 'Data Structures', 'I');
+
+
+DELIMITER //
+
+CREATE PROCEDURE CalculateFine(IN roll_no INT, IN book_name VARCHAR(255))
+BEGIN
+    DECLARE issue_date DATE;
+    DECLARE days_diff INT;
+    DECLARE fine DECIMAL(10, 2);
+
+    -- Get the issue date from Borrow table
+    SELECT DateofIssue INTO issue_date
+    FROM Borrow
+    WHERE Roll_no = roll_no AND NameofBook = book_name AND Status = 'I';
+
+    -- If no record is found, raise an exception
+    IF issue_date IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Record not found for this roll number and book name.';
+    END IF;
+
+    -- Calculate the number of days since the book was issued
+    SET days_diff = DATEDIFF(CURDATE(), issue_date);
+
+    -- Fine calculation
+    IF days_diff > 30 THEN
+        SET fine = days_diff * 50;  -- Rs 50 per day for days > 30
+    ELSE
+        SET fine = days_diff * 5;  -- Rs 5 per day for days <= 30
+    END IF;
+
+    -- Update the book status to 'Returned' (R)
+    UPDATE Borrow
+    SET Status = 'R'
+    WHERE Roll_no = roll_no AND NameofBook = book_name;
+
+    -- If a fine is applicable, insert into Fine table
+    IF fine > 0 THEN
+        INSERT INTO Fine (Roll_no, Date, Amt)
+        VALUES (roll_no, CURDATE(), fine);
+        SELECT 'Fine recorded: Rs ' AS Message, fine AS Amount;
+    ELSE
+        SELECT 'No fine applicable' AS Status;
+    END IF;
+
+END;
+//
+
+DELIMITER ;
+
+ CALL CalculateFine(102, 'Algorithms');
